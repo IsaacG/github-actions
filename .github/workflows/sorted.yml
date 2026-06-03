@@ -1,0 +1,47 @@
+name: Check practice exercises are sorted
+
+on:
+  workflow_call:
+    inputs:
+      ordering:
+        description: "How exercises are ordered"
+        required: true
+        type: string
+
+jobs:
+  check:
+    name: Check exercises
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Check if practice exercises are sorted
+        run: |
+          jq -e --arg cmp "${{ inputs.ordering }}" '
+            def bucket(i):
+              # Bucket by displayed difficulty. 0-3: easy; 4-7: medium; 8-10: hard.
+              [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3][i];
+
+            def cmp(i; a; b):
+              # Return if `a < b` using the `$cmp` method.
+              # hello-world is always acceptable as the first item.
+              (
+                i == 0 and a.slug == "hello-world"
+              ) or {
+                "slug": a.slug < b.slug,
+                "bucket": bucket(a.difficulty) <= bucket(b.difficulty),
+                "bucket-then-slug": bucket(a.difficulty) < bucket(b.difficulty) or (
+                  bucket(a.difficulty) == bucket(b.difficulty) and a.slug < b.slug
+                ),
+                "difficulty": a.difficulty <= b.difficulty,
+                "difficulty-then-slug": a.difficulty < b.difficulty or (a.difficulty == b.difficulty and a.slug < b.slug),
+              }[$cmp]
+              ;
+
+            # Check all exercises are ordered.
+            (
+              .exercises.practice |
+              [range(0; length-1) as $i | if cmp($i; .[$i]; .[$i + 1]) then empty else "\(.[$i].slug) - \(.[$i + 1].slug)" end]
+            ) as $unordered |
+            if ($unordered | length) != 0 then ($unordered | halt_error) else empty end
+          ' config.json

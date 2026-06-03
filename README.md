@@ -295,5 +295,40 @@ jobs:
     uses: exercism/github-actions/.github/workflows/labels.yml@main
 ```
 
+## Reusable workflow: sorted
+
+The `sorted` reusable workflow checks if the practice exercises on a track are sorted.
+
+### Inputs
+
+The workflow takes a single input, `ordering`, that determines how sorting works.
+The `ordering` input must be one of the following strings.
+
+* **"slug"**: sort alphabetically by the slug
+* **"bucket"**: sort by the difficulty "bucket" or "displayed difficulty (easy, medium, hard)
+* **"bucket-then-slug"**: sort by the difficulty "bucket" then by slug
+* **"difficulty"**: sort by the difficulty value (1, 2, 3, ... 10)
+* **"difficulty-then-slug"**: sort by the difficulty then by slug
+
+### Example
+
+```yaml
+name: Check practice exercises are sorted
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  configlet:
+    uses: exercism/github-actions/.github/workflows/sorted.yml@main
+    with:
+      ordering: bucket-then-slug
+```
+
 [configlet]: https://exercism.org/docs/building/configlet
 [configlet-lint]: https://exercism.org/docs/building/configlet/lint
